@@ -1,40 +1,77 @@
 import { Injectable } from '@nestjs/common';
-
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { Product } from './product.model';
 
 @Injectable()
 export class ProductService {
-  products: Product[] = [];
-  insertProduct(title: string, desc: string, price: number): string {
-    const prodId = new Date().toString();
-    const newProduct = new Product(prodId, title, desc, price);
-    this.products.push(newProduct);
-    return prodId;
+  constructor(
+    @InjectModel('Product') private readonly productModel: Model<Product>,
+  ) {}
+
+  async insertProduct(
+    title: string,
+    desc: string,
+    price: number,
+  ): Promise<string> {
+    const newProduct = new this.productModel({
+      title: title,
+      description: desc,
+      price: price,
+    });
+    const result = await newProduct.save();
+    return result._id as string;
   }
-  getProducts(): Product[] {
-    return [...this.products];
+
+  async getProducts(): Promise<Product[]> {
+    const products = await this.productModel.find();
+    console.log(products);
+    return products;
   }
-  getProduct(id: string): Product[] {
-    return [...this.products.filter((prod) => prod.id === id)];
-  }
-  updateProduct(id: string, title: string, desc: string, price: number) {
-    const product = this.products.filter((prod) => prod.id === id);
-    if (product.length > 0) {
-      product[0].title = title;
-      product[0].description = desc;
-      product[0].price = price;
-      const copyArray = [...product];
-      return copyArray[0];
+
+  async getProduct(id: string): Promise<Product> {
+    try {
+      const product = await this.productModel.findById(id);
+      if (product) {
+        return product;
+      }
+    } catch (err) {
+      console.log(err);
+      return null;
     }
-    return false;
   }
-  deleteProduct(id: string) {
-    const product = this.products.filter((prod) => prod.id === id);
-    if (product.length > 0) {
-      this.products = this.products.filter((prod) => prod.id !== id);
-      const copyArray = [...product];
-      return copyArray[0];
+
+  async updateProduct(
+    id: string,
+    title: string,
+    desc: string,
+    price: number,
+  ): Promise<Product> {
+    try {
+      const product = await this.productModel.findById(id);
+      if (product) {
+        product.title = title;
+        product.description = desc;
+        product.price = price;
+        const result = await product.save();
+        return result;
+      }
+    } catch (err) {
+      console.log(err);
+      return null;
     }
-    return false;
+  }
+
+  async deleteProduct(id: string) {
+    try {
+      const product = await this.productModel.findById(id);
+      if (product) {
+        const result = await product.deleteOne();
+        return result;
+      }
+    } catch (err) {
+      console.log(err);
+      return null;
+    }
   }
 }

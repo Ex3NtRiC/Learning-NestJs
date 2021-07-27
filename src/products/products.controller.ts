@@ -15,12 +15,12 @@ export class ProdutsController {
   constructor(private readonly productsServie: ProductService) {}
 
   @Post()
-  addProduct(
+  async addProduct(
     @Body('title') prodTitle: string,
     @Body('desc') prodDesc: string,
     @Body('price') prodPrice: number,
-  ): { id: string } {
-    const generatedId = this.productsServie.insertProduct(
+  ): Promise<{ id: string }> {
+    const generatedId = await this.productsServie.insertProduct(
       prodTitle,
       prodDesc,
       prodPrice,
@@ -29,23 +29,27 @@ export class ProdutsController {
   }
 
   @Get()
-  getProducts() {
-    return this.productsServie.products;
+  async getProducts() {
+    return await this.productsServie.getProducts();
   }
 
   @Get(':id')
-  getProduct(@Param('id') id: string) {
-    return this.productsServie.getProduct(id);
+  async getProduct(@Param('id') id: string) {
+    const product = await this.productsServie.getProduct(id);
+    if (product) {
+      return product;
+    }
+    throw new NotFoundException('Error Occured could not update');
   }
 
   @Put(':id')
-  updateProduct(
+  async updateProduct(
     @Param('id') id: string,
     @Body('title') prodTitle: string,
     @Body('desc') prodDesc: string,
     @Body('price') prodPrice: number,
   ) {
-    const foo = this.productsServie.updateProduct(
+    const foo = await this.productsServie.updateProduct(
       id,
       prodTitle,
       prodDesc,
@@ -58,8 +62,8 @@ export class ProdutsController {
   }
 
   @Delete(':id')
-  deleteProduct(@Param('id') id: string) {
-    const foo = this.productsServie.deleteProduct(id);
+  async deleteProduct(@Param('id') id: string) {
+    const foo = await this.productsServie.deleteProduct(id);
     if (foo) {
       return foo;
     }
